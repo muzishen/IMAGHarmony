@@ -245,11 +245,10 @@ class IPAdapter(torch.nn.Module):
     def forward(self, noisy_latents, timesteps, encoder_hidden_states, unet_added_cond_kwargs, image_embeds,extra=None):
         
         ip_tokens = self.image_proj_model(image_embeds)
-        if extra is not None:
-            extra_ip_tokens=ip_tokens+extra
-            encoder_hidden_states = torch.cat([encoder_hidden_states, ip_tokens,extra_ip_tokens], dim=1)
-        else:
-            encoder_hidden_states = torch.cat([encoder_hidden_states, ip_tokens], dim=1)
+        
+        
+        ip_tokens=ip_tokens+extra
+        encoder_hidden_states = torch.cat([encoder_hidden_states, ip_tokens], dim=1)
         # Predict the noise residual
         
         noise_pred = self.unet(noisy_latents, timesteps, encoder_hidden_states,
@@ -716,10 +715,8 @@ def main():
                 
                 #extra text
                 output=number_class_crossattention(text_extra_embeds,image_embeds)
-                # print(image_embeds.shape)
-                # print(f"out:{output.shape}")
-                #image_embeds=image_embeds+output
-                # print(f"image:{image_embeds.shape}")
+                
+                
                 noise_pred = ip_adapter(noisy_latents, timesteps, text_embeds, unet_added_cond_kwargs, image_embeds,extra=output)
 
                 loss = F.mse_loss(noise_pred.float(), noise.float(), reduction="mean")

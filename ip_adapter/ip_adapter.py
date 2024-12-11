@@ -206,17 +206,16 @@ class IPAdapter:
             number_class_crossattention=number_class_crossattention.to(self.device,torch.float16)
             extra_embeds=extra_embeds.to(self.device,torch.float16)
             output=number_class_crossattention(extra_embeds,clip_image_embeds)
-            image_prompt_embeds=torch.cat([image_prompt_embeds,image_prompt_embeds+output],dim=1)
+            image_prompt_embeds=image_prompt_embeds+output
         
         
         
         uncond_image_prompt_embeds = self.image_proj_model(torch.zeros_like(clip_image_embeds))
-        uncond_image_prompt_embeds=torch.cat([uncond_image_prompt_embeds,uncond_image_prompt_embeds],dim=1)
-        # uncond_clip_image_embeds=torch.zeros_like(clip_image_embeds)
-        # if uncond_extra_embeds is not None:
-        #     uncond_extra_embeds=uncond_extra_embeds.to(self.device,torch.float16)
-        #     uncond_output=number_class_crossattention(uncond_extra_embeds,uncond_clip_image_embeds)
-        #     uncond_image_prompt_embeds=torch.cat([uncond_image_prompt_embeds,uncond_image_prompt_embeds+uncond_output],dim=1)
+        
+        if uncond_extra_embeds is not None:
+            uncond_extra_embeds=uncond_extra_embeds.to(self.device,torch.float16)
+            uncond_output=number_class_crossattention(uncond_extra_embeds,clip_image_embeds)
+            uncond_image_prompt_embeds=uncond_image_prompt_embeds+uncond_output
             
         return image_prompt_embeds, uncond_image_prompt_embeds
 

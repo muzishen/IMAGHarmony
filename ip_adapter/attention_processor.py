@@ -363,12 +363,11 @@ class IPAttnProcessor2_0(torch.nn.Module):
         else:
             # get encoder_hidden_states, ip_hidden_states
             
-            end_pos = encoder_hidden_states.shape[1] - self.num_tokens*2
-            if not self.skip and not self.up:
-                extra_ip_hidden_states=encoder_hidden_states[:, end_pos+self.num_tokens:, :]
+            end_pos = encoder_hidden_states.shape[1] - self.num_tokens
+  
             encoder_hidden_states, ip_hidden_states = (
                 encoder_hidden_states[:, :end_pos, :],
-                encoder_hidden_states[:, end_pos:end_pos+self.num_tokens, :],
+                encoder_hidden_states[:, end_pos:, :],
             )
             
             if attn.norm_cross:
@@ -400,8 +399,8 @@ class IPAttnProcessor2_0(torch.nn.Module):
             # print('yes style')
             if not self.up:
                 
-                style_key = self.to_k_s(extra_ip_hidden_states)
-                style_value = self.to_v_s(extra_ip_hidden_states)
+                style_key = self.to_k_s(ip_hidden_states)
+                style_value = self.to_v_s(ip_hidden_states)
 
                 style_key = style_key.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
                 style_value = style_value.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
