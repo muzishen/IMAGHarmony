@@ -285,85 +285,183 @@ class IPAdapter(torch.nn.Module):
 
         print(f"Successfully loaded weights from checkpoint {ckpt_path}")
         
-class AttentionProcess(torch.nn.Module):
-    def __init__(self,hidden_size,cross_attention_dim=None):
-        super().__init__()
+# class AttentionProcess(torch.nn.Module):
+#     def __init__(self,hidden_size,cross_attention_dim=None):
+#         super().__init__()
         
-        self.hidden_size=hidden_size
-        self.cross_atteiton=cross_attention_dim
-    def __call__(
-        self,
-        attn,
-        text_embeds,
-        image_embeds
-    ):
-        #图像做q
-        batch_size,sequence_length,_=text_embeds.shape
-        query=attn.to_q(image_embeds)
-        #文本做k,v
-        key=attn.to_k(text_embeds)
-        value=attn.to_v(text_embeds)
+#         self.hidden_size=hidden_size
+#         self.cross_atteiton=cross_attention_dim
+#     def __call__(
+#         self,
+#         attn,
+#         image_embeds_query,
+#         text_embeds_key,
+#         text_embeds_value
+#     ):
+#         #图像做q
+#         batch_size,sequence_length,_=image_embeds_query.shape
+#         query=attn.to_q(image_embeds_query)
+#         #文本做k,v
+#         key=attn.to_k(text_embeds_key)
+#         value=attn.to_v(text_embeds_value)
         
         
-        #多头注意力机制
-        inner_dim = key.shape[-1]
-        head_dim = inner_dim // attn.heads
+#         #多头注意力机制
+#         inner_dim = key.shape[-1]
+#         head_dim = inner_dim // attn.heads
 
-        query = query.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+#         query = query.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
 
-        key = key.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
-        value = value.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
-        output = F.scaled_dot_product_attention(
-            query, key, value,  dropout_p=0.0, is_causal=False
-        )
+#         key = key.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+#         value = value.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+#         output = F.scaled_dot_product_attention(
+#             query, key, value,  dropout_p=0.0, is_causal=False
+#         )
 
-        output = output.transpose(1, 2).reshape(batch_size, -1, attn.heads * head_dim)
-        output = output.to(query.dtype)
+#         output = output.transpose(1, 2).reshape(batch_size, -1, attn.heads * head_dim)
+#         output = output.to(query.dtype)
+        
+#         return output
+        
+        
+
+
+
+
+
+
+class MultiHeadCrossAttention(nn.Module):
+    """
+    Multi-Head Cross Attention mechanism that takes text and image embeddings as input
+    and computes the cross-attention between them. This module computes attention scores 
+    for each query (from text) and key-value pair (from image).
+    """
+    
+    def __init__(self, query_dim, key_dim, num_heads=10):
+        """
+        Initializes the multi-head cross-attention layer.
+        
+        Args:
+            query_dim (int): The dimension of the query vector (text embedding).
+            key_dim (int): The dimension of the key and value vectors (image embedding).
+            num_heads (int): The number of attention heads.
+        """
+        super(MultiHeadCrossAttention, self).__init__()
+        
+        self.num_heads = num_heads
+        self.query_dim = query_dim
+        self.key_dim = key_dim
+        
+        # Linear projections for query, key, and value
+        self.query_projection = nn.Linear(query_dim, query_dim * num_heads)
+        self.key_projection = nn.Linear(key_dim, key_dim * num_heads)
+        self.value_projection = nn.Linear(key_dim, key_dim * num_heads)
+        
+        # Output ln and projection
+        self.ln = nn.LayerNorm(key_dim * num_heads)
+        self.output_projection = nn.Linear(key_dim * num_heads, key_dim * num_heads)
+
+    def forward(self, query, key, value):
+        """
+        Forward pass for multi-head attention.
+        
+        Args:
+            query (torch.Tensor): The query tensor of shape [batch_size, seq_len, query_dim].
+            key (torch.Tensor): The key tensor of shape [batch_size, seq_len, key_dim].
+            value (torch.Tensor): The value tensor of shape [batch_size, seq_len, value_dim].
+        
+        Returns:
+            torch.Tensor: The output tensor after applying multi-head cross-attention.
+        """
+        
+        batch_size = query.size(0)
+        
+        # Linear projections for query, key, value
+        query = self.query_projection(query).view(batch_size, -1, self.num_heads, self.query_dim)
+        key = self.key_projection(key).view(batch_size, -1, self.num_heads, self.key_dim)
+        value = self.value_projection(value).view(batch_size, -1, self.num_heads, self.key_dim)
+        
+        # Scaled dot-product attention for each head
+        attention_scores = torch.matmul(query, key.transpose(-1, -2)) / (self.query_dim ** 0.5)
+        attention_weights = torch.nn.functional.softmax(attention_scores, dim=-1)
+        
+        # Attention output: weighted sum of value vectors
+        attention_output = torch.matmul(attention_weights, value)
+        
+        # Concatenate attention outputs from all heads and project to the output dimension
+        attention_output = attention_output.view(batch_size, -1, self.num_heads * self.key_dim)
+        output = self.output_projection(attention_output)
         
         return output
-        
-        
-class Number_Class_crossAttention(torch.nn.Module):#Number_Class_crossAttention
-    def __init__(self, hidden_size, cross_attention_dim,scale=1.0):
-        super().__init__()
-        
-        # Cross Attention 层
-        self.cross_attention = AttentionProcess(hidden_size==hidden_size,cross_attention_dim=cross_attention_dim)
-        self.scale=scale
-        self.attention=Attention(query_dim=cross_attention_dim,out_dim=cross_attention_dim)
-        
-        #图像从1280->2048*4
-        self.fc1=nn.Linear(hidden_size,cross_attention_dim*4)
-        
-        
-        
-        # Layer Normalization 层
-        self.ln = nn.LayerNorm(cross_attention_dim)
-        
-        # FC 层 2048->2048
-        self.fc2 = nn.Linear(cross_attention_dim,cross_attention_dim)
-        
 
-    def forward(self, text_embeds,image_embeds):
-        # image_features 和 text_features 维度应为 [seq_len, batch_size, input_dim]
-        #[1,1,1280] Linear ->[1,1,2048]->q
-        #[1,77,2048]->decoder1,decoder2->[1,77,2048]->k,v
-        #图像q，文本k,v,cross_attention，LN,FC(2048->1280)->[1,1,1280]->[1,1280]*scale+image_embeds
+
+class Number_Class_crossAttention(nn.Module):
+    """
+    This class implements a cross-attention mechanism for multimodal fusion of text and image embeddings.
+    The text and image embeddings are projected into different spaces and then combined via cross-attention
+    to produce a refined image representation.
+    """
+    
+    def __init__(self, hidden_size, cross_attention_dim, scale=1.0, num_heads=10):
+        """
+        Initializes the Number_Class_crossAttention model.
         
-        # 使用 Cross Attention 层
-        image_embeds = image_embeds.unsqueeze(1)#[1,1,1280]
-       
-        #image [1,1,1280]->[1,1,2048*4]->[1,4,2048]
-        image_embeds=self.fc1(image_embeds)
-        image_embeds=image_embeds.reshape(1,4,2048)
-        output=self.cross_attention(self.attention,text_embeds,image_embeds)#[1,4,2048]
-        # 对输出进行 Layer Normalization
-        output=self.ln(output)
+        Args:
+            hidden_size (int): The hidden size for text embedding projection.
+            cross_attention_dim (int): The dimension of the query and key-value vectors for cross-attention.
+            scale (float, optional): A scaling factor for the output (default is 1.0).
+            num_heads (int, optional): The number of attention heads for the multi-head attention (default is 10).
+        """
+        super(Number_Class_crossAttention, self).__init__()
         
-        #  FC 层[1,4,2048]->[1,4,2048]
-        output=self.fc2(output)
+        # Fully connected layers for text embedding processing
+        self.text_fc = nn.Linear(2048, 2048)
         
-        return output*self.scale
+        # Fully connected layers for image embedding processing
+        self.image_fc = nn.Linear(1280, 2560)
+        
+        
+        # Scaling factor for the final output
+        self.scale = scale
+        
+        # Cross-Attention Layer (handles fusion between text and image features)
+        self.cross_attention = MultiHeadCrossAttention(query_dim=cross_attention_dim, 
+                                                       key_dim=cross_attention_dim, 
+                                                       num_heads=num_heads)
+
+    def forward(self, text_embeds, image_embeds):
+        """
+        Forward pass for the multimodal fusion model. This method combines text and image embeddings
+        using a cross-attention mechanism to produce a refined image output.
+
+        Args:
+            text_embeds (torch.Tensor): The text embeddings tensor of shape [batch_size, seq_len, text_dim].
+            image_embeds (torch.Tensor): The image embeddings tensor of shape [batch_size, img_dim].
+
+        Returns:
+            torch.Tensor: The output image embedding after fusion and transformation.
+        """
+        
+        bs = text_embeds.size(0)  # Extract batch size
+        
+        # Process text embeddings: [batch_size, seq_len, text_dim]
+        text_embeds = self.text_fc(text_embeds) 
+
+        # Process image embeddings: [batch_size, img_dim]
+        origin_image_embeds = image_embeds 
+        image_embeds = self.image_fc(image_embeds) 
+
+        # Apply cross-attention mechanism between text and image embeddings
+
+        output = self.cross_attention(image_embeds, text_embeds, text_embeds)  
+
+        # Add original image embeddings to the output (skip connection) and scale the result
+        output = output * self.scale + origin_image_embeds
+
+        return output
+
+
+
     def load_from_checkpoint(self, ckpt_path: str):
 
         weights = load_file(ckpt_path)
@@ -371,6 +469,7 @@ class Number_Class_crossAttention(torch.nn.Module):#Number_Class_crossAttention
         # 加载权重到模型
         self.load_state_dict(weights)
         print(f"Successfully loaded weights from checkpoint {ckpt_path}")
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Simple example of a training script.")
     parser.add_argument(
@@ -601,7 +700,7 @@ def main():
     
     
     #额外文本和参考图的cross_attention
-    number_class_crossattention= Number_Class_crossAttention(hidden_size=1280, cross_attention_dim=2048)
+    number_class_crossattention= Number_Class_crossAttention(hidden_size=1280, cross_attention_dim=32)
     number_class_crossattention.requires_grad_(True)
     
     
