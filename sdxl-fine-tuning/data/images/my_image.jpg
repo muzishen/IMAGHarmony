@@ -1,0 +1,7 @@
+将以下内容保存到文件 `/sdxl-fine-tuning/data/train.json`：
+
+{
+  "image_file": "my_image.jpg",
+  "text": "描述该图片的文本",
+  "extra_text": "额外的文本信息（可选）"
+}
