@@ -7,7 +7,7 @@ from diffusers.pipelines.controlnet import MultiControlNetModel
 from PIL import Image
 from safetensors import safe_open
 from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
-from  tutorial_train_sdxl_ori import ComposedAttention
+from  tutorial_train_sdxl_ori import HarmonyAttention
 from .utils import is_torch2_available, get_generator
 
 if is_torch2_available():
