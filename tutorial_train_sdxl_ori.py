@@ -206,141 +206,67 @@ class HarmonyAttention(nn.Module):
         
         # 所有方法都需要的图像投影
         self.fc1 = nn.Linear(image_hidden_size, inter_dim)
-        
-        # 1. 交叉注意力
-        self.cross_attention = Cross_Attention(
-            query_dim=self.cross_query_dim,
-            context_dim=text_context_dim,
-            heads=cross_heads,
-            value_dim=cross_value_dim
-        )
-        
-        # 后处理组件
-        flattened_dim = cross_value_dim * cross_heads * reshape_blocks
-        self.ln = nn.LayerNorm(flattened_dim)
-        self.fc2 = nn.Linear(flattened_dim, image_hidden_size)
-        
-        # 2. Q-Former
-        self.query_tokens = None
-        self.qformer_attention = None
-        self.qformer_self_attention = None
-        
-        # 3. MLP
-        self.mlp_fusion = None
-        self.text_proj = None
-        
-    def _init_qformer(self, cross_heads, cross_value_dim):
-       
-        if self.qformer_attention is None:
-            
-            device = next(self.parameters()).device
-            dtype = next(self.parameters()).dtype
-            
-           
-            self.query_tokens = nn.Parameter(torch.zeros(1, self.reshape_blocks, self.cross_query_dim, device=device, dtype=dtype))
-            nn.init.normal_(self.query_tokens, std=0.02)
-            
-            # 计算第一次注意力后的维度
-            attention_output_dim = cross_heads * cross_value_dim
-            
-            # 创建注意力层并转移到正确设备和数据类型
-            self.qformer_attention = Cross_Attention(
+        if fusion_method == "cross_attention":
+            # 1. 交叉注意力
+            self.fusion_text_image = Cross_Attention(
                 query_dim=self.cross_query_dim,
-                context_dim=self.text_context_dim,
+                context_dim=text_context_dim,
                 heads=cross_heads,
                 value_dim=cross_value_dim
-            ).to(device).to(dtype)
-            
-            # 修改自注意力层的query_dim和context_dim，匹配第一个注意力层的输出维度
-            self.qformer_self_attention = Cross_Attention(
-                query_dim=attention_output_dim,  # cross_heads * cross_value_dim
-                context_dim=attention_output_dim,  # 对应512维
+            )
+        elif fusion_method == "qformer":
+            # 2. Q-Former TODO
+            self.fusion_text_image = Cross_Attention(
+                query_dim=self.cross_query_dim,
+                context_dim=text_context_dim,
                 heads=cross_heads,
                 value_dim=cross_value_dim
-            ).to(device).to(dtype)
-            
-         
-            self.img_proj = nn.Linear(
-                self.cross_query_dim * self.reshape_blocks, 
-                attention_output_dim
-            ).to(device).to(dtype)
-    
-    def _init_mlp_fusion(self):
-   
-        if self.mlp_fusion is None:
-            device = next(self.parameters()).device
-            dtype = next(self.parameters()).dtype
-            
-            self.mlp_fusion = nn.Sequential(
+            )
+        else: 
+           #3.mlp TODO
+           self.fusion_text_image = nn.Sequential(
                 nn.Linear(self.image_hidden_size + self.text_context_dim, self.cross_query_dim * self.reshape_blocks),
                 nn.GELU(),
                 nn.Linear(self.cross_query_dim * self.reshape_blocks, self.image_hidden_size)
-            ).to(device).to(dtype)
-            
-            self.text_proj = nn.Linear(self.text_context_dim, self.text_context_dim).to(device).to(dtype)
+            )
 
-    def forward(self, text_embeds, image_embeds):
 
+
+     
+        flattened_dim = cross_value_dim * cross_heads * reshape_blocks
+        self.ln = nn.LayerNorm(flattened_dim)
+        self.fc2 = nn.Linear(flattened_dim, image_hidden_size)
+
+
+
+def forward(self, text_embeds, image_embeds):
+        """
+        Args:
+            text_embeds: [B, T, text_context_dim]
+            image_embeds: [B, image_hidden_size]
+        Returns:
+            out: [B, image_hidden_size]，融合了文本条件的图像特征
+        """
         B = image_embeds.size(0)
-        
-        # 根据融合方法选择实现
-        if self.fusion_method == "qformer":
-            # 延迟初始化Q-Former组件
-            self._init_qformer(cross_heads=self.cross_attention.heads, 
-                            cross_value_dim=self.cross_attention.value_dim)
-            
-            # 获取相关维度
-            query_dim = self.cross_query_dim  # 通常是320
-            attention_output_dim = self.cross_attention.heads * self.cross_attention.value_dim  # 8*64=512
-            
-            # 扩展查询token以匹配批次大小
-            query_tokens = self.query_tokens.expand(B, -1, -1)  # [B, 8, 320]
-            
-            # 先与文本交互
-            attended = self.qformer_attention(query_tokens, text_embeds)  # [B, 8, 512]
-            
-            # 图像特征处理 - 调整到与attended相同的尺寸
-            x = self.fc1(image_embeds)  # [B, 2560]
-            x = x.view(B, self.reshape_blocks, self.cross_query_dim)  # [B, 8, 320]
-            x = self.cross_attention(x, text_embeds)  # [B, 8, 512] 
-            
-            # 融合特征 (相加)
-            attended = attended + x  # 现在两者维度匹配: [B, 8, 512]
-            
-            # 再进行自注意力，聚合查询token之间的信息
-           
-            attended = self.qformer_self_attention(attended, attended)  # [B, 8, 512]
-            
-        elif self.fusion_method == "mlp":
-      
-            self._init_mlp_fusion()
-            
-            # 处理文本特征（如果是序列，则取平均）
-            if len(text_embeds.shape) == 3:  # [B, T, D]
-                text_feat = self.text_proj(text_embeds).mean(dim=1)  # [B, D]
-            else:
-                text_feat = self.text_proj(text_embeds)  # [B, D]
-                
-            # 拼接图像和文本特征
-            concat_feat = torch.cat([image_embeds, text_feat], dim=1)
-            
-            # 通过MLP处理拼接特征
-            return self.mlp_fusion(concat_feat) * self.scale
-            
-        else:  # 默认使用cross_attention
-      
-            x = self.fc1(image_embeds)  # [B, inter_dim]
-            x = x.view(B, self.reshape_blocks, self.cross_query_dim)  # [B, N_blocks, query_dim]
-    
-            # 交叉注意力：图像块与文本交互
-            attended = self.cross_attention(x, text_embeds)  # [B, N_blocks, value_dim * heads]
-        
-  
+
+        # 映射图像特征到中间维度，并 reshape 为多个块
+        x = self.fc1(image_embeds)  # [B, inter_dim]
+        x = x.view(B, self.reshape_blocks, self.cross_query_dim)  # [B, N_blocks, query_dim]  
+
+        # Cross-Attention：图像块与文本交互
+        attended = self.fusion_text_image(x, text_embeds)  # [B, N_blocks, value_dim * heads]
+
+        # 展平、归一化、回投影
         attended = attended.view(B, -1)     # [B, flattened_dim]
         out = self.ln(attended)
         out = self.fc2(out) * self.scale
-            
+
         return out
+
+
+    
+
+  
 
            
            
