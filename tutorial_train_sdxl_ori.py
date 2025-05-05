@@ -21,7 +21,7 @@ from diffusers import AutoencoderKL, DDPMScheduler, UNet2DConditionModel
 from transformers import CLIPTextModel, CLIPTokenizer, CLIPVisionModelWithProjection, CLIPTextModelWithProjection
 from safetensors import safe_open
 from shared_models import ImageProjModel
-
+from baseline import QFormer,MLP,AttentionFusionWrapper
 from safetensors.torch import save_file, load_file
 from ip_adapter.utils import is_torch2_available
 if is_torch2_available():
@@ -206,6 +206,7 @@ class HarmonyAttention(nn.Module):
         
         # 所有方法都需要的图像投影
         self.fc1 = nn.Linear(image_hidden_size, inter_dim)
+        print(fusion_method)
         if fusion_method == "cross_attention":
             # 1. 交叉注意力
             self.fusion_text_image = Cross_Attention(
@@ -216,22 +217,22 @@ class HarmonyAttention(nn.Module):
             )
         elif fusion_method == "qformer":
             # 2. Q-Former TODO
-            self.fusion_text_image = Cross_Attention(
-                query_dim=self.cross_query_dim,
-                context_dim=text_context_dim,
-                heads=cross_heads,
-                value_dim=cross_value_dim
+            self.fusion_text_image = QFormer(
+                 num_queries=16,
+                 hidden_dim=self.cross_query_dim,
+                 num_layers=1,
+                 num_heads=cross_heads
             )
-        else: 
+        elif fusion_method=='mlp': 
            #3.mlp TODO
-           self.fusion_text_image = nn.Sequential(
-                nn.Linear(self.image_hidden_size + self.text_context_dim, self.cross_query_dim * self.reshape_blocks),
-                nn.GELU(),
-                nn.Linear(self.cross_query_dim * self.reshape_blocks, self.image_hidden_size)
+           self.fusion_text_image = MLP(
+               fused_dim=self.cross_query_dim
             )
-
-
-
+        elif fusion_method=='gated-attention':
+            #4.gated-attention
+            self.fusion_text_image = AttentionFusionWrapper(
+               fused_dim=self.cross_query_dim
+            )
      
         flattened_dim = cross_value_dim * cross_heads * reshape_blocks
         self.ln = nn.LayerNorm(flattened_dim)
@@ -239,29 +240,30 @@ class HarmonyAttention(nn.Module):
 
 
 
-def forward(self, text_embeds, image_embeds):
-        """
-        Args:
-            text_embeds: [B, T, text_context_dim]
-            image_embeds: [B, image_hidden_size]
-        Returns:
-            out: [B, image_hidden_size]，融合了文本条件的图像特征
-        """
-        B = image_embeds.size(0)
+    def forward(self, text_embeds, image_embeds):
+            """
+            Args:
+                text_embeds: [B, T, text_context_dim]
+                image_embeds: [B, image_hidden_size]
+            Returns:
+                out: [B, image_hidden_size]，融合了文本条件的图像特征
+            """
+            B = image_embeds.size(0)
 
-        # 映射图像特征到中间维度，并 reshape 为多个块
-        x = self.fc1(image_embeds)  # [B, inter_dim]
-        x = x.view(B, self.reshape_blocks, self.cross_query_dim)  # [B, N_blocks, query_dim]  
+            # 映射图像特征到中间维度，并 reshape 为多个块
+            x = self.fc1(image_embeds)  # [B, inter_dim]
+            x = x.view(B, self.reshape_blocks, self.cross_query_dim)  # [B, N_blocks, query_dim]  
 
-        # Cross-Attention：图像块与文本交互
-        attended = self.fusion_text_image(x, text_embeds)  # [B, N_blocks, value_dim * heads]
+            # Cross-Attention：图像块与文本交互
+            print(self.fusion_text_image)
+            attended = self.fusion_text_image(x, text_embeds)  # [B, N_blocks, value_dim * heads]
+            print(attended.shape)
+            # 展平、归一化、回投影
+            attended = attended.view(B, -1)     # [B, flattened_dim]
+            out = self.ln(attended)
+            out = self.fc2(out) * self.scale
 
-        # 展平、归一化、回投影
-        attended = attended.view(B, -1)     # [B, flattened_dim]
-        out = self.ln(attended)
-        out = self.fc2(out) * self.scale
-
-        return out
+            return out
 
 
     
@@ -567,8 +569,6 @@ def main():
     adapter_modules = torch.nn.ModuleList(unet.attn_processors.values())
 
 
-
-  
     # 创建完整的IP-Adapter模型
     ip_adapter = IPAdapter(
         unet,
@@ -579,6 +579,7 @@ def main():
         cross_heads=args.composed_cross_heads,         # 使用命令行参数
         reshape_blocks=args.composed_reshape_blocks,   # 使用命令行参数
         cross_value_dim=args.composed_cross_value_dim, # 使用命令行参数
+        fusion_method='cross_attention'
     )
 
     # ip_adapter = IPAdapter(unet, image_proj_model, adapter_modules)
