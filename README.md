@@ -78,7 +78,6 @@ python conver_bin.py
 #then run
 
 python test.py
-
 ```
 ## Acknowledgement
 We would like to thank the contributors to the [Instantstyle](https://github.com/instantX-research/InstantStyle) and [IP-Adapter](https://github.com/tencent-ailab/IP-Adapter) repositories, for their open research and exploration.
