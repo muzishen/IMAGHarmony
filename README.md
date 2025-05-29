@@ -67,6 +67,7 @@ You can download our models from [百度云](). You can download the other compo
 # and modify the path in run.sh
 ## Write caption of your image in your train.json file 
 # start training
+
 sh train.sh
 ```
 ## 🚀 How to test
