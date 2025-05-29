@@ -71,6 +71,9 @@ sh train.sh
 ```
 ## 🚀 How to test
 ```
+#Please convert your checkpionts
+python conver_bin.py
+
 #Please fill in your path in infer_new.py
 #then run
 
