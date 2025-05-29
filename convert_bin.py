@@ -51,16 +51,12 @@ def convert_checkpoint_to_ip_adapter(pytorch_model_path, output_ip_adapter_path)
 
 
 
-'''
-在下列main中修改目录
-
-'''
 
 
 
 
 if __name__ == "__main__":
-    base_log_dir = "/aigc_data_hdd/all_logs/"
+    base_log_dir = "your fine_tuned model path"
     total_converted = 0
     total_skipped = 0
     total_errors = 0
