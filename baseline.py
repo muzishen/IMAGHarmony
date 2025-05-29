@@ -83,32 +83,32 @@ class MLP(nn.Module):
         image_feat: [B, T_img, image_dim]
         text_feat: [B, T_txt, text_dim]
         """
-        # 简单池化（mean pooling）
+ 
         image_repr = image_feat.mean(dim=1)  # [B, image_dim]
         text_repr = text_feat.mean(dim=1)    # [B, text_dim]
 
-        # 映射到相同维度
+
         image_proj = self.image_proj(image_repr)  # [B, fused_dim]
         text_proj = self.text_proj(text_repr)     # [B, fused_dim]
 
-        # 拼接后送入 MLP
+
         fused = torch.cat([image_proj, text_proj], dim=-1)  # [B, 2*fused_dim]
         
         output = self.mlp(fused).reshape(-1,self.num_header,self.fused_dim)  # [B, fused_dim]
         return output
     
-# 第4种 gated-attention
+
 
 
 class GatedAttentionFusion(nn.Module):
     def __init__(self, input_dim=768, hidden_dim=512):
         super().__init__()
-        # 融合门控（产生 alpha 权重）
+
         self.gate_mlp = nn.Sequential(
             nn.Linear(2 * input_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, 1),
-            nn.Sigmoid()  # 输出 alpha ∈ [0, 1]
+            nn.Sigmoid()  #  alpha ∈ [0, 1]
         )
 
     def forward(self, img_feat, txt_feat):
@@ -119,7 +119,7 @@ class GatedAttentionFusion(nn.Module):
         fused_input = torch.cat([img_feat, txt_feat], dim=-1)  # [B, 2D]
         alpha = self.gate_mlp(fused_input)  # [B, 1]
 
-        # 融合：注意这里 alpha 需要 broadcast
+
         fused = alpha * img_feat + (1 - alpha) * txt_feat  # [B, D]
         return fused
 
