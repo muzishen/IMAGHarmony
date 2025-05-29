@@ -45,19 +45,19 @@ def generate_image(input_path, prompt, extra_text, output_path="output.png"):
 
 
 if __name__ == "__main__":
-    input_image = "/home/sf/code/IMAGHarmony-2/sdxl-fine-tuning/data/images/eight_sheep.jpg"
+    input_image = "your path to inputimage"
     device = "cuda:2"  
 
     # 模型路径配置
-    base_model_path = "/aigc_data_hdd/checkpoints/stable-diffusion-xl-base-1.0"
-    image_encoder_path = "/aigc_data_hdd/checkpoints/stable-diffusion-xl-base-1.0/image_encoder"
-    # ip_ckpt = "/aigc_data_hdd/checkpoints/stable-diffusion-xl-base-1.0/ip-adapter_sdxl.safetensors"
-    fine_tuned_ckpt = "/aigc_data_hdd/all_logs/IMAGHarmony_interdim2560_crossheads8_reshapeblocks8_crossvaluedim64/checkpoint-200/ip_adapter.bin"  # 微调后的权重
+    base_model_path = "your path"
+    image_encoder_path = "your path"
+
+    fine_tuned_ckpt = "fine_tuned model path"  # 微调后的权重
 
     save_root = os.path.join(
-        '/home/sf/code/IMAGHarmony_new/results/',
-        fine_tuned_ckpt.split('/')[3],  # IMAGHarmonyv2
-        fine_tuned_ckpt.split('/')[4],  # checkpoint-600
+        'your path',
+        fine_tuned_ckpt.split('/')[3], 
+        fine_tuned_ckpt.split('/')[4], 
     )
     # 创建路径（如果不存在）
     os.makedirs(save_root, exist_ok=True)
@@ -75,7 +75,7 @@ if __name__ == "__main__":
 
 
         # 定义使用的融合方法
-    fusion_method = "qformer"  # 可选: "cross_attention", "qformer", "mlp"
+    fusion_method = "cross_attention"  # 可选: "cross_attention", "qformer", "mlp"
 
     number_class_crossattention = HarmonyAttention(
         image_hidden_size=1280,     # 保持不变
