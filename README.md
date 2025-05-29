@@ -98,7 +98,7 @@ If you find IMAGDressing-v1 useful for your research and applications, please ci
 - [x] Paper
 - [x] Train Code
 - [x] Inference Code
-- [ ] GarmentBench Dataset
+- [ ] HarmonyBench Dataset
 - [ ] Model Weights
 ## 📨 Contact
 If you have any questions, please feel free to contact with us at shenfei140721@126.com and yutonggaokkk@njust.edu.cn.
