@@ -1,4 +1,4 @@
->IMAGHarmony: Controllable Image Editing with Consistent Object Quantity and Layout
+# IMAGHarmony: Controllable Image Editing with Consistent Object Quantity and Layout
 
 
 
@@ -33,27 +33,14 @@ Extensive experiments demonstrate that IMAGHarmony consistently outperforms stat
 ![dataset_demo](./assets/bench.png)
 ## 🚀 Examples
 
-![results_1](./assets/introductionv3.png)
+![results_1](./assets/page3.png)
 
 
-### Different Colors and Silhouettes
-<p align="center">
-  <img src="./assets/app1-1.png" alt="results_2" width="800" height="400"/>
-</p>
-
-<p align="center">
-  <img src="./assets/app1-2.png" alt="results_2" width="800" height="400"/>
-</p>
+### Double_edit
+![results_2](./assets/page2.png)
 
 
-### More Results
-<p align="center">
-  <img src="./assets/appendix1-1.png" alt="results_2" width="800" height="400"/>
-</p>
 
-<p align="center">
-  <img src="./assets/appendix1-2.png" alt="results_2" width="800" height="400"/>
-</p>
 
 
 ## 🔧 Requirements
