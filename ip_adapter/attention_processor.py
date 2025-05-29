@@ -4,56 +4,54 @@ import torch.nn as nn
 import torch.nn.functional as F
 import math
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import math
+
 class Cross_Attention(nn.Module):
-    def __init__(self, 
-                 query_dim ,         # Q 投影输入维度
-                 context_dim,       # K/V 投影输入维度
-                 heads=8, 
-                 value_dim=None,    # V 降维后维度（默认同 head_dim）
-                 out_dim=None):     # 输出维度
+    def __init__(self,
+                 query_dim,         # Input dimension for Q projection
+                 context_dim,       # Input dimension for K/V projection
+                 heads=8,
+                 value_dim=None,    # Dimension of V after projection (defaults to head_dim)
+                 out_dim=None):     # Output dimension
         super().__init__()
         self.query_dim = query_dim
         self.heads = heads
-        self.head_dim = self.query_dim//self.heads
+        self.head_dim = self.query_dim // self.heads
         self.scale = math.sqrt(self.head_dim)
         self.value_dim = value_dim if value_dim is not None else self.head_dim
         self.out_dim = out_dim if out_dim is not None else heads * self.value_dim
 
-
-        # 线性投影层
+        # Linear projection layers
         self.to_q = nn.Linear(query_dim, self.heads * self.head_dim)
-
         self.to_k = nn.Linear(context_dim, self.heads * self.head_dim)
-
         self.to_v = nn.Linear(context_dim, self.heads * self.value_dim)
 
-
-        # 可选输出投影
+        # Optional output projection
         self.out_proj = nn.Linear(heads * self.value_dim, self.out_dim)
 
     def forward(self, query_input, context_input):
-        """
-        query_input: [B, Q_len, query_dim]
-        context_input: [B, K_len, context_dim]
-        """
+
         B = query_input.size(0)
 
-        # 投影 Q, K, V
+        # Project Q, K, V
         q = self.to_q(query_input).view(B, -1, self.heads, self.head_dim).transpose(1, 2)  # [B, heads, Q_len, head_dim]
         k = self.to_k(context_input).view(B, -1, self.heads, self.head_dim).transpose(1, 2)  # [B, heads, K_len, head_dim]
         v = self.to_v(context_input).view(B, -1, self.heads, self.value_dim).transpose(1, 2)  # [B, heads, K_len, v_dim]
-        
-        # Attention 权重
+
+        # Attention scores (weights)
         attn_scores = torch.matmul(q, k.transpose(-2, -1)) / self.scale  # [B, heads, Q_len, K_len]
         attn_probs = F.softmax(attn_scores, dim=-1)
 
-        # 加权求和
+        # Weighted sum
         attn_output = torch.matmul(attn_probs, v)  # [B, heads, Q_len, v_dim]
 
-        # 拼接 heads
+        # Concatenate heads
         attn_output = attn_output.transpose(1, 2).contiguous().view(B, -1, self.heads * self.value_dim)  # [B, Q_len, heads * v_dim]
 
-        # 输出投影
+        # Output projection
         output = self.out_proj(attn_output)  # [B, Q_len, out_dim]
         return output
     
