@@ -74,15 +74,11 @@ sh train.sh
 #Please convert your checkpionts
 python conver_bin.py
 
-#Please fill in your path in infer_new.py
+#Please fill in your path in test.py
 #then run
 
-python infer_new.py
+python test.py
 
-#If you want to select a better result
-#fill in your path in infer_seed.py and run it
-
-python infer_seed.py
 ```
 ## Acknowledgement
 We would like to thank the contributors to the [Instantstyle](https://github.com/instantX-research/InstantStyle) and [IP-Adapter](https://github.com/tencent-ailab/IP-Adapter) repositories, for their open research and exploration.
