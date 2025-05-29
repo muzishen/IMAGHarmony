@@ -1,7 +1,7 @@
 [
   {
-  "image_file": "your image",
+  "image_file": "your image", //five_cats.png
   "text": " ", 
-  "extra_text": "your caption"
+  "extra_text": "your caption" //"Five cats enjoying the sunset by the sea" or "Five cats"
   }
 ]
