@@ -187,14 +187,14 @@ def collate_fn(data):
 
 class HarmonyAttention(nn.Module):
     def __init__(self,
-                 image_hidden_size=1280,     # 输入图像特征维度
-                 text_context_dim=2048,      # 输入文本上下文特征维度
-                 inter_dim=2560,             # 中间投影维度
-                 cross_heads=10,             # cross-attention 多头数量
-                 reshape_blocks=8,           # 图像特征分块数量
-                 cross_value_dim=64,         # 降维后每个 head 的 value 维度
-                 scale=1.0,                  # 输出缩放因子
-                 fusion_method="qformer"): # 融合方法选择mlp,cross_attention,qformer
+                 image_hidden_size=1280,     # Input image feature dimension
+                 text_context_dim=2048,      # Input text context feature dimension
+                 inter_dim=2560,             # Intermediate projection dimension
+                 cross_heads=10,             # Number of cross-attention heads
+                 reshape_blocks=8,           # Number of image feature blocks
+                 cross_value_dim=64,         # Value dimension per head after dimensionality reduction
+                 scale=1.0,                  # Output scaling factor
+                 fusion_method="qformer"): # Fusion method selection: mlp, cross_attention, qformer
         super().__init__()
         
         self.scale = scale
@@ -204,11 +204,11 @@ class HarmonyAttention(nn.Module):
         self.image_hidden_size = image_hidden_size
         self.text_context_dim = text_context_dim
         
-        # 所有方法都需要的图像投影
+        # Image projection required by all methods
         self.fc1 = nn.Linear(image_hidden_size, inter_dim)
         print(fusion_method)
         if fusion_method == "cross_attention":
-            # 1. 交叉注意力
+            # 1. Cross-attention
             self.fusion_text_image = Cross_Attention(
                 query_dim=self.cross_query_dim,
                 context_dim=text_context_dim,
@@ -224,12 +224,12 @@ class HarmonyAttention(nn.Module):
                  num_heads=cross_heads
             )
         elif fusion_method=='mlp': 
-           #3.mlp TODO
+           #3. MLP TODO
            self.fusion_text_image = MLP(
                fused_dim=self.cross_query_dim
             )
         elif fusion_method=='gated-attention':
-            #4.gated-attention
+            #4. Gated-attention
             self.fusion_text_image = AttentionFusionWrapper(
                fused_dim=self.cross_query_dim
             )
@@ -246,19 +246,19 @@ class HarmonyAttention(nn.Module):
                 text_embeds: [B, T, text_context_dim]
                 image_embeds: [B, image_hidden_size]
             Returns:
-                out: [B, image_hidden_size]，融合了文本条件的图像特征
+                out: [B, image_hidden_size], image features fused with text conditions
             """
             B = image_embeds.size(0)
 
-            # 映射图像特征到中间维度，并 reshape 为多个块
+            # Map image features to intermediate dimension and reshape into multiple blocks
             x = self.fc1(image_embeds)  # [B, inter_dim]
             x = x.view(B, self.reshape_blocks, self.cross_query_dim)  # [B, N_blocks, query_dim]  
 
-            # Cross-Attention：图像块与文本交互
+            # Cross-Attention: interaction between image blocks and text
             print(self.fusion_text_image)
             attended = self.fusion_text_image(x, text_embeds)  # [B, N_blocks, value_dim * heads]
             print(attended.shape)
-            # 展平、归一化、回投影
+            # Flatten, normalize, and project back
             attended = attended.view(B, -1)     # [B, flattened_dim]
             out = self.ln(attended)
             out = self.fc2(out) * self.scale
@@ -279,22 +279,22 @@ class IPAdapter(torch.nn.Module):
                  cross_heads=None,
                  reshape_blocks=None,
                  cross_value_dim=None,
-                 fusion_method="cross_attention"):  # 融合方法参数
+                 fusion_method="cross_attention"):  # Fusion method parameter
         super().__init__()
         self.unet = unet
         self.image_proj_model = image_proj_model
         self.adapter_modules = adapter_modules
         
-        # 直接使用 fusion_method 参数，不需要转换为布尔标志
+        # Directly use the fusion_method parameter, no need to convert to a boolean flag
         self.composed_modules = HarmonyAttention(
-            image_hidden_size=1280,     # 图像特征维度固定
-            text_context_dim=2048,      # 文本上下文维度固定
+            image_hidden_size=1280,     # Image feature dimension fixed
+            text_context_dim=2048,      # Text context dimension fixed
             inter_dim=inter_dim,
             cross_heads=cross_heads,
             reshape_blocks=reshape_blocks,
             cross_value_dim=cross_value_dim,
-            scale=1.0,                  # 缩放因子固定
-            fusion_method=fusion_method  # 直接传递融合方法参数
+            scale=1.0,                  # Scaling factor fixed
+            fusion_method=fusion_method  # Directly pass the fusion method parameter
         )
         
         if ckpt_path is not None:
@@ -453,25 +453,25 @@ def parse_args():
         "--composed_inter_dim",
         type=int,
         default=None,
-        help="HarmonyAttention 的中间投影维度 [例如: 1280, 2560]。"
+        help="HarmonyAttention's intermediate projection dimension [e.g., 1280, 2560]."
     )
     parser.add_argument(
         "--composed_cross_heads",
         type=int,
         default=None,
-        help="HarmonyAttention 中的 cross-attention 多头数量 [例如: 8, 10]。"
+        help="Number of cross-attention heads in HarmonyAttention [e.g., 8, 10]."
     )
     parser.add_argument(
         "--composed_reshape_blocks",
         type=int,
         default=None,
-        help="HarmonyAttention 中图像特征的分块数量 [例如: 4, 8]。"
+        help="Number of image feature blocks in HarmonyAttention [e.g., 4, 8]."
     )
     parser.add_argument(
         "--composed_cross_value_dim",
         type=int,
         default=None,
-        help="HarmonyAttention 中降维后每个 head 的 value 维度 [例如: 32, 64]。"
+        help="Value dimension per head after dimensionality reduction in HarmonyAttention [e.g., 32, 64]."
     )
     
     args = parser.parse_args()
@@ -483,11 +483,11 @@ def parse_args():
     
 
 def main():
-    # 解析命令行参数
+    # Parse command-line arguments
     args = parse_args()
     logging_dir = Path(args.output_dir, args.logging_dir)
 
-    # 配置accelerate，用于混合精度训练和分布式训练
+    # Configure accelerate for mixed-precision and distributed training
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir, logging_dir=logging_dir)
     accelerator = Accelerator(
         mixed_precision=args.mixed_precision,
@@ -495,13 +495,13 @@ def main():
         project_config=accelerator_project_config,
     )
     
-    # 创建输出目录
+    # Create output directory
     if accelerator.is_main_process:
         if args.output_dir is not None:
             os.makedirs(args.output_dir, exist_ok=True)
 
-    # 加载各种预训练模型组件
-    # 噪声添加控制、分词器、文本编码器、VAE和UNet等
+    # Load various pre-trained model components
+    # Noise addition control, tokenizer, text encoder, VAE, UNet, etc.
     noise_scheduler = DDPMScheduler.from_pretrained(args.pretrained_model_name_or_path, subfolder="scheduler")
     tokenizer = CLIPTokenizer.from_pretrained(args.pretrained_model_name_or_path, subfolder="tokenizer")
     text_encoder = CLIPTextModel.from_pretrained(args.pretrained_model_name_or_path, subfolder="text_encoder")
@@ -511,28 +511,28 @@ def main():
     unet = UNet2DConditionModel.from_pretrained(args.pretrained_model_name_or_path, subfolder="unet")
     image_encoder = CLIPVisionModelWithProjection.from_pretrained(args.image_encoder_path)
     
-    # 冻结基础模型参数，只训练适配器部分
+    # Freeze base model parameters, only train the adapter part
     unet.requires_grad_(False)
     vae.requires_grad_(False)
     text_encoder.requires_grad_(False)
     text_encoder_2.requires_grad_(False)
     image_encoder.requires_grad_(False)
     
-    # 初始化IP-Adapter模型组件
-    # 图像投影模型将CLIP图像嵌入映射到UNet的交叉注意力维度
-    num_tokens = 4  # 额外上下文token数量
+    # Initialize IP-Adapter model components
+    # Image projection model maps CLIP image embeddings to UNet's cross-attention dimension
+    num_tokens = 4  # Number of extra context tokens
     image_proj_model = ImageProjModel(
         cross_attention_dim=unet.config.cross_attention_dim,
         clip_embeddings_dim=image_encoder.config.projection_dim,
         clip_extra_context_tokens=num_tokens,
     )
     
-    # 初始化适配器注意力处理器
-    # 为UNet中的每个注意力块创建适当的注意力处理器
+    # Initialize adapter attention processors
+    # Create appropriate attention processors for each attention block in UNet
     # init adapter modules
     attn_procs = {}
     unet_sd = unet.state_dict()
-    #初始化unet的attention+IPA的cross_attention参数
+    # Initialize UNet's attention + IP-Adapter's cross_attention parameters
     for name in unet.attn_processors.keys():
         cross_attention_dim = None if name.endswith("attn1.processor") else unet.config.cross_attention_dim
         if name.startswith("mid_block"):
@@ -548,7 +548,7 @@ def main():
             attn_procs[name] = AttnProcessor()
         else:
             layer_name = name.split(".processor")[0]
-            #需要添加IP的层加入额外的attention参数
+            # Layers that need to add IP join additional attention parameters
             if 'down_blocks.2.attentions.1' in name:
         
                 weights = {
@@ -563,46 +563,46 @@ def main():
                 attn_procs[name] = IPAttnProcessor(hidden_size=hidden_size, cross_attention_dim=cross_attention_dim,
                                                    num_tokens=num_tokens, skip=True)
 
-    #把attention处理都加载到unet中
+    # Load all attention processing into UNet
     unet.set_attn_processor(attn_procs)
-    #把所有attention层提出来变成一个list
+    # Extract all attention layers into a list
     adapter_modules = torch.nn.ModuleList(unet.attn_processors.values())
 
 
-    # 创建完整的IP-Adapter模型
+    # Create the complete IP-Adapter model
     ip_adapter = IPAdapter(
         unet,
         image_proj_model,
         adapter_modules,
         args.pretrained_ip_adapter_path,
-        inter_dim=args.composed_inter_dim,           # 使用命令行参数
-        cross_heads=args.composed_cross_heads,         # 使用命令行参数
-        reshape_blocks=args.composed_reshape_blocks,   # 使用命令行参数
-        cross_value_dim=args.composed_cross_value_dim, # 使用命令行参数
+        inter_dim=args.composed_inter_dim,           # Use command-line arguments
+        cross_heads=args.composed_cross_heads,         # Use command-line arguments
+        reshape_blocks=args.composed_reshape_blocks,   # Use command-line arguments
+        cross_value_dim=args.composed_cross_value_dim, # Use command-line arguments
         fusion_method='cross_attention'
     )
 
     # ip_adapter = IPAdapter(unet, image_proj_model, adapter_modules)
-    # 设置混合精度训练的数据类型
+    # Set data type for mixed-precision training
     weight_dtype = torch.float32
     if accelerator.mixed_precision == "fp16":
         weight_dtype = torch.float16
     elif accelerator.mixed_precision == "bf16":
         weight_dtype = torch.bfloat16
         
-    # 将模型移至适当的设备并转换为适当的数据类型
-    vae.to(accelerator.device)  # VAE使用fp32以提高稳定性
+    # Move models to the appropriate device and convert to the appropriate data type
+    vae.to(accelerator.device)  # VAE uses fp32 for better stability
     text_encoder.to(accelerator.device, dtype=weight_dtype)
     text_encoder_2.to(accelerator.device, dtype=weight_dtype)
     image_encoder.to(accelerator.device, dtype=weight_dtype)
     
-    # 设置优化器 - 只优化IP-Adapter组件
+    # Set optimizer - only optimize IP-Adapter components
     params_to_opt = itertools.chain(ip_adapter.adapter_modules.parameters(), ip_adapter.composed_modules.parameters())
     optimizer = torch.optim.AdamW(params_to_opt, lr=args.learning_rate, weight_decay=args.weight_decay)
     accelerator.print("Trainable parameters:  adapter_modules:{:.2f}M, composed_modules:{:.2f}M".format(
     count_model_params(ip_adapter.adapter_modules),
     count_model_params(ip_adapter.composed_modules)))
-    # 创建数据集和数据加载器
+    # Create dataset and dataloader
     train_dataset = MyDataset(args.data_json_file, tokenizer=tokenizer, tokenizer_2=tokenizer_2, size=args.resolution, image_root_path=args.data_root_path)
     train_dataloader = torch.utils.data.DataLoader(
         train_dataset,
@@ -612,42 +612,42 @@ def main():
         num_workers=args.dataloader_num_workers,
     )
     
-    # 使用accelerator准备模型、优化器和数据加载器
+    # Prepare model, optimizer, and dataloader with accelerator
     ip_adapter, optimizer, train_dataloader = accelerator.prepare(ip_adapter, optimizer, train_dataloader)
     
-    # 开始训练循环
+    # Start training loop
     global_step = 0
     for epoch in range(0, args.num_train_epochs):
         begin = time.perf_counter()
         for step, batch in enumerate(train_dataloader):
             load_data_time = time.perf_counter() - begin
             with accelerator.accumulate(ip_adapter):
-                # 使用VAE将图像转换到潜在空间
+                # Convert images to latent space using VAE
                 with torch.no_grad():
-                    # SDXL的VAE使用fp32以提高数值稳定性
+                    # SDXL's VAE uses fp32 for better numerical stability
                     latents = vae.encode(batch["images"].to(accelerator.device, dtype=torch.float32)).latent_dist.sample()
                     latents = latents * vae.config.scaling_factor
                     latents = latents.to(accelerator.device, dtype=weight_dtype)
 
-                # 生成随机噪声添加到潜在表示
+                # Generate random noise to add to the latent representation
                 noise = torch.randn_like(latents)
                 if args.noise_offset:
-                    # 使用噪声偏移技术提高训练稳定性
+                    # Use noise offset technique to improve training stability
                     noise += args.noise_offset * torch.randn((latents.shape[0], latents.shape[1], 1, 1)).to(accelerator.device, dtype=weight_dtype)
 
                 bsz = latents.shape[0]
-                # 为每个图像采样随机时间步
+                # Sample random timesteps for each image
                 timesteps = torch.randint(0, noise_scheduler.num_train_timesteps, (bsz,), device=latents.device)
                 timesteps = timesteps.long()
 
-                # 根据时间步添加噪声（前向扩散过程）
+                # Add noise according to timesteps (forward diffusion process)
                 noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
             
-                # 获取CLIP图像嵌入
+                # Get CLIP image embeddings
                 with torch.no_grad():
                     image_embeds = image_encoder(batch["clip_images"].to(accelerator.device, dtype=weight_dtype)).image_embeds
                 
-                # 应用图像嵌入丢弃策略
+                # Apply image embedding dropout strategy
                 image_embeds_ = []
                 for image_embed, drop_image_embed in zip(image_embeds, batch["drop_image_embeds"]):
                     if drop_image_embed == 1:
@@ -656,14 +656,14 @@ def main():
                         image_embeds_.append(image_embed)
                 image_embeds = torch.stack(image_embeds_)
             
-                # 获取文本嵌入（SDXL使用两个文本编码器）
+                # Get text embeddings (SDXL uses two text encoders)
                 with torch.no_grad():
                     encoder_output = text_encoder(batch['text_input_ids'].to(accelerator.device), output_hidden_states=True)
                     text_embeds = encoder_output.hidden_states[-2]
                     encoder_output_2 = text_encoder_2(batch['text_input_ids_2'].to(accelerator.device), output_hidden_states=True)
                     pooled_text_embeds = encoder_output_2[0]
                     text_embeds_2 = encoder_output_2.hidden_states[-2]
-                    text_embeds = torch.concat([text_embeds, text_embeds_2], dim=-1)  # 连接两个文本编码器的输出
+                    text_embeds = torch.concat([text_embeds, text_embeds_2], dim=-1)  # Concatenate outputs of the two text encoders
                     
                     #extra text
                     encoder_extra_output = text_encoder(batch['text_extra_input_ids'].to(accelerator.device),output_hidden_states=True)
@@ -672,7 +672,7 @@ def main():
                     text_extra_embeds_2 = encoder_extra_output_2.hidden_states[-2]
                     text_extra_embeds=torch.concat([text_extra_embeds,text_extra_embeds_2],dim=-1)
                                         
-                # 添加SDXL所需的额外条件（图像尺寸和裁剪信息）
+                # Add extra conditions required by SDXL (image size and crop info)
                 add_time_ids = [
                     batch["original_size"].to(accelerator.device),
                     batch["crop_coords_top_left"].to(accelerator.device),
@@ -681,28 +681,28 @@ def main():
                 add_time_ids = torch.cat(add_time_ids, dim=1).to(accelerator.device, dtype=weight_dtype)
                 unet_added_cond_kwargs = {"text_embeds": pooled_text_embeds, "time_ids": add_time_ids}
                 
-                # 使用IP-Adapter预测噪声
+                # Predict noise using IP-Adapter
                 noise_pred = ip_adapter(noisy_latents, timesteps, text_embeds, unet_added_cond_kwargs, image_embeds, text_extra_embeds)
                 
-                # 计算MSE损失（预测噪声与实际添加的噪声之间）
+                # Calculate MSE loss (between predicted noise and actual added noise)
                 loss = F.mse_loss(noise_pred.float(), noise.float(), reduction="mean")
             
-                # 收集分布式训练中的损失
+                # Gather loss in distributed training
                 avg_loss = accelerator.gather(loss.repeat(args.train_batch_size)).mean().item()
                 
-                # 反向传播和优化器步骤
+                # Backpropagation and optimizer step
                 accelerator.backward(loss)
                 optimizer.step()
                 optimizer.zero_grad()
 
-                # 打印训练信息
+                # Print training information
                 if accelerator.is_main_process:
                     print("Epoch {}, step {}, data_time: {}, time: {}, step_loss: {}".format(
                         epoch, step, load_data_time, time.perf_counter() - begin, avg_loss))
             
             global_step += 1
             
-            # 定期保存检查点
+            # Save checkpoint periodically
             if global_step % args.save_steps == 0:
                 save_path = os.path.join(args.output_dir, f"checkpoint-{global_step}")
                 accelerator.save_state(save_path, safe_serialization=False)
@@ -710,4 +710,4 @@ def main():
             begin = time.perf_counter()
                 
 if __name__ == "__main__":
-    main()    
+    main()
