@@ -1,13 +1,13 @@
 import torch
 from diffusers import StableDiffusionXLPipeline
 from PIL import Image
-from ip_adapter import IPAdapterXL
-from tutorial_train_sdxl_ori import HarmonyAttention
-import os 
+from ip_adapter import IPAdapterXL # Assuming IPAdapterXL is correctly defined in ip_adapter
+from tutorial_train_sdxl_ori import HarmonyAttention # Assuming HarmonyAttention is correctly defined
+import os
 
 
 '''
-须手动调整以下参数与训练的参数相符合
+The following parameters must be manually adjusted to match the training parameters.
 '''
 ckpt_inter_dim = 2560
 ckpt_cross_heads = 8
@@ -17,14 +17,14 @@ ckpt_cross_value_dim = 64
 
 
 
-# 图像生成函数
+# Image generation function
 def generate_image(input_path, prompt, extra_text, output_path="output.png"):
     print(f"\nGenerating image for: {prompt} + {extra_text}")
     
-    # 准备输入图像
+    # Prepare input image
     input_image = Image.open(input_path).resize((512, 512))
     
-    # 生成图像
+    # Generate image
     images = ip_model.generate(
         pil_image=input_image,
         prompt=prompt,
@@ -35,35 +35,35 @@ def generate_image(input_path, prompt, extra_text, output_path="output.png"):
         num_inference_steps=30,
         seed=42,
         extra_text=extra_text,
-        number_class_crossattention=number_class_crossattention
+        number_class_crossattention=number_class_crossattention # This should be the HarmonyAttention instance
     )
     
-    # 保存结果
+    # Save result
     images[0].save(output_path)
     print(f"Saved generated image to: {output_path}")
     return images[0]
 
 
 if __name__ == "__main__":
-    input_image = "your path to inputimage"
+    input_image = "your path to inputimage" # Replace with your actual input image path
     device = "cuda:2"  
 
-    # 模型路径配置
-    base_model_path = "your path"
-    image_encoder_path = "your path"
+    # Model path configuration
+    base_model_path = "your path" # Replace with your actual base model path
+    image_encoder_path = "your path" # Replace with your actual image encoder path
 
-    fine_tuned_ckpt = "fine_tuned model path"  # 微调后的权重
+    fine_tuned_ckpt = "fine_tuned model path"  # Path to the fine-tuned weights (ip_adapter.bin or similar)
 
     save_root = os.path.join(
-        'your path',
-        fine_tuned_ckpt.split('/')[3], 
-        fine_tuned_ckpt.split('/')[4], 
+        'your path', # Replace with your desired save directory
+        fine_tuned_ckpt.split('/')[3] if len(fine_tuned_ckpt.split('/')) > 3 else "default_folder1", 
+        fine_tuned_ckpt.split('/')[4] if len(fine_tuned_ckpt.split('/')) > 4 else "default_folder2", 
     )
-    # 创建路径（如果不存在）
+    # Create path (if it doesn't exist)
     os.makedirs(save_root, exist_ok=True)
     print(f"Save directory created at: {save_root}")
     
-    # 加载SDXL基础模型
+    # Load SDXL base model
     print("Loading base SDXL model...")
     pipe = StableDiffusionXLPipeline.from_pretrained(
         base_model_path,
@@ -74,40 +74,42 @@ if __name__ == "__main__":
     pipe.to(device)
 
 
-        # 定义使用的融合方法
-    fusion_method = "cross_attention"  # 可选: "cross_attention", "qformer", "mlp"
+    # Define the fusion method to be used
+    fusion_method = "cross_attention"  # Options: "cross_attention", "qformer", "mlp"
 
-    number_class_crossattention = HarmonyAttention(
-        image_hidden_size=1280,     # 保持不变
-        text_context_dim=2048,      # 保持不变
+    # Initialize HarmonyAttention (this is the `number_class_crossattention` module)
+    print("Initializing HarmonyAttention module...")
+    number_class_crossattention = HarmonyAttention( # Renamed for clarity, this is your custom attention module
+        image_hidden_size=1280,     # Keep unchanged or match your training
+        text_context_dim=2048,      # Keep unchanged or match your training
         inter_dim=ckpt_inter_dim,
         cross_heads=ckpt_cross_heads,
         reshape_blocks=ckpt_reshape_blocks,
         cross_value_dim=ckpt_cross_value_dim,
-        scale=1.0,                  # 保持不变或根据需要调整
-        fusion_method=fusion_method  # 添加融合方法选择
+        scale=1.0,                  # Keep unchanged or adjust as needed
+        fusion_method=fusion_method  # Add fusion method selection
     ).to(device).half()
 
-    # 初始化IP-Adapter
+    # Initialize IP-Adapter
     print("Initializing IP-Adapter with target blocks...")
     ip_model = IPAdapterXL(
         pipe, 
         image_encoder_path, 
         fine_tuned_ckpt, 
         device,
-        target_blocks=["down_blocks.2.attentions.1"],  
-        num_tokens=4,
+        target_blocks=["down_blocks.2.attentions.1"],  # Or your specific target blocks
+        num_tokens=4, # Or your specific number of tokens
         inference=True,
-        number_class_crossattention=number_class_crossattention  
+        number_class_crossattention=number_class_crossattention  # Pass the initialized HarmonyAttention module here
     )
 
-    # 加载微调后的HarmonyAttention模块
-    print("Loading fine-tuned HarmonyAttention...")
+
+    print("HarmonyAttention weights are expected to be loaded as part of the IP-Adapter checkpoint.")
  
 
     generate_image(
         input_path=input_image,
         prompt="lions",
-        extra_text="eight sheep",#用训练的caption
-        output_path=save_root + '/' + input_image.split('/')[-1]
+        extra_text="eight sheep", # Use the caption from training
+        output_path=os.path.join(save_root, os.path.basename(input_image)) # Safer way to construct output path
     )
