@@ -2,6 +2,12 @@
   {
   "image_file": "your image", 
   "text": " ", 
-  "extra_text": "your caption" 
+  "extra_text": "your caption", 
+  "comments": {
+      "image_file": "five_cats.png",
+      "text": "",
+      "extra_text": "Five cats"
+    }
   }
+
 ]
