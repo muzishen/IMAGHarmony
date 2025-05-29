@@ -64,8 +64,9 @@ You can download our models from [百度云](). You can download the other compo
 
 ## 🚀 How to train
 ```
-# Please download the HarmonyBench data first 
+# Please download the HarmonyBench data first or prepare your own images
 # and modify the path in run.sh
+## Write caption of your image in your train.json file 
 # start training
 sh train.sh
 ```
