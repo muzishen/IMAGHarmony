@@ -26,20 +26,20 @@ from .resampler import Resampler
 
 
 class ImageProjModel(torch.nn.Module):
-    """投影模型 - 将CLIP图像特征转换为适合UNet交叉注意力的格式"""
+
 
     def __init__(self, cross_attention_dim=1024, clip_embeddings_dim=1024, clip_extra_context_tokens=4):
         super().__init__()
 
         self.generator = None
-        self.cross_attention_dim = cross_attention_dim  # UNet交叉注意力的维度
-        self.clip_extra_context_tokens = clip_extra_context_tokens  # 额外上下文token数量
-        # 线性投影层，将CLIP嵌入转换为多个额外的上下文token
+        self.cross_attention_dim = cross_attention_dim  
+        self.clip_extra_context_tokens = clip_extra_context_tokens  
+ 
         self.proj = torch.nn.Linear(clip_embeddings_dim, self.clip_extra_context_tokens * cross_attention_dim)
-        self.norm = torch.nn.LayerNorm(cross_attention_dim)  # 标准化层
+        self.norm = torch.nn.LayerNorm(cross_attention_dim)  
 
     def forward(self, image_embeds):
-        # 投影CLIP图像嵌入到多个上下文token
+ 
         embeds = image_embeds
         clip_extra_context_tokens = self.proj(embeds).reshape(
             -1, self.clip_extra_context_tokens, self.cross_attention_dim
@@ -49,11 +49,11 @@ class ImageProjModel(torch.nn.Module):
 
 
 class MLPProjModel(torch.nn.Module):
-    """使用多层感知器的投影模型 - 用于IPAdapterFull变体"""
+
     def __init__(self, cross_attention_dim=1024, clip_embeddings_dim=1024):
         super().__init__()
         
-        # 多层感知器，包含两个线性层、GELU激活和层标准化
+
         self.proj = torch.nn.Sequential(
             torch.nn.Linear(clip_embeddings_dim, clip_embeddings_dim),
             torch.nn.GELU(),
@@ -72,7 +72,7 @@ class IPAdapter:
         self.image_encoder_path = image_encoder_path
         self.ip_ckpt = ip_ckpt
         self.num_tokens = num_tokens
-        # self.target_blocks = target_blocks or ["down_blocks.2.attentions.1"]  # 默认目标层
+        # self.target_blocks = target_blocks or ["down_blocks.2.attentions.1"] 
 
         self.pipe = sd_pipe.to(self.device)
         self.set_ip_adapter()
@@ -113,7 +113,7 @@ class IPAdapter:
             if cross_attention_dim is None:
                 attn_procs[name] = AttnProcessor()
             else:
-                #需要添加IP的层加入额外的attention参数
+
                 if 'down_blocks.2.attentions.1' in name:
                     attn_procs[name] = IPAttnProcessor(hidden_size=hidden_size, cross_attention_dim=cross_attention_dim,
                                                     num_tokens=self.num_tokens, skip=False).to(self.device, dtype=torch.float16)
@@ -124,7 +124,7 @@ class IPAdapter:
         
         unet.set_attn_processor(attn_procs)
         
-        # 控制unet部分保持不变
+
         if hasattr(self.pipe, "controlnet"):
             if isinstance(self.pipe.controlnet, MultiControlNetModel):
                 for controlnet in self.pipe.controlnet.nets:
@@ -266,7 +266,7 @@ class IPAdapterXL(IPAdapter):
         num_inference_steps=30,
         **kwargs,
     ):
-        """SDXL专用的生成方法，考虑了SDXL的pooled嵌入"""
+
         self.set_scale(scale)
 
         num_prompts = 1 if isinstance(pil_image, Image.Image) else len(pil_image)
@@ -342,11 +342,11 @@ class IPAdapterXL(IPAdapter):
 
 
 class IPAdapterPlus(IPAdapter):
-    """使用细粒度特征的IP-Adapter增强版本"""
+
 
     def init_proj(self):
-        """使用Resampler替代简单的线性投影"""
-        # Resampler是一种更强大的特征重采样模型，能更好地捕获图像中的细节
+
+
         image_proj_model = Resampler(
             dim=self.pipe.unet.config.cross_attention_dim,
             depth=4,
@@ -361,8 +361,7 @@ class IPAdapterPlus(IPAdapter):
 
     @torch.inference_mode()
     def get_image_embeds(self, pil_image=None, clip_image_embeds=None):
-        """使用CLIP模型的倒数第二层隐藏状态作为更丰富的特征"""
-        # 使用CLIP的内部特征而非最终投影，提供更细粒度的图像理解
+
         if isinstance(pil_image, Image.Image):
             pil_image = [pil_image]
         clip_image = self.clip_image_processor(images=pil_image, return_tensors="pt").pixel_values
