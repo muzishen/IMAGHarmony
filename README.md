@@ -50,8 +50,7 @@ Extensive experiments demonstrate that IMAGHarmony consistently outperforms stat
 - cuda>=11.8
 ```
 conda create --name IMAGHarmony python=3.8.18
-conda activate IMAGGarment
-pip install -U pip
+conda activate IMAGHarmony
 
 # Install requirements
 pip install -r requirements.txt
