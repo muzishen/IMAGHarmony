@@ -1,5 +1,5 @@
 accelerate launch --gpu_ids 0 --num_processes 1 --mixed_precision "fp16" \
-  tutorial_train_sdxl_ori.py \
+  train.py \
   --pretrained_model_name_or_path="your path" \
   --pretrained_ip_adapter_path="your path" \
   --image_encoder_path="your path" \
