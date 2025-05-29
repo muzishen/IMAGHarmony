@@ -3,9 +3,9 @@ import os
 from diffusers import StableDiffusionXLPipeline
 from PIL import Image
 from ip_adapter import IPAdapterXL
-from tutorial_train_sdxl_ori import ComposedAttention
+from tutorial_train_sdxl_ori import ComposedAttention # Assuming tutorial_train_sdxl_ori.py contains ComposedAttention
 
-# 与训练参数保持一致
+# Consistent with training parameters
 ckpt_inter_dim = 2560
 ckpt_cross_heads = 8
 ckpt_reshape_blocks = 8
@@ -21,26 +21,26 @@ def generate_images_with_seeds(
     end_seed=100,
     number_class_crossattention=None
 ):
-    """为多个种子值生成图像"""
-    # 确保输出目录存在
+    """Generate images for multiple seed values"""
+    # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
     
-    # 加载输入图像
+    # Load the input image
     input_image = Image.open(input_path).resize((512, 512))
     
-    # 循环生成每个种子的图像
+    # Loop to generate images for each seed
     for seed in range(start_seed, end_seed + 1):
-        # 设置输出文件名为种子值
+        # Set the output filename as the seed value
         output_path = os.path.join(output_dir, f"{seed}.png")
         
-        # 检查是否已存在该图像（便于中断后继续）
+        # Check if the image already exists (to resume after interruption)
         if os.path.exists(output_path):
-            print(f"图像 seed={seed} 已存在，跳过...")
+            print(f"Image for seed={seed} already exists, skipping...")
             continue
             
-        print(f"\n正在生成 seed={seed} 的图像: {prompt} + {extra_text}")
+        print(f"\nGenerating image for seed={seed}: {prompt} + {extra_text}")
         
-        # 生成图像
+        # Generate image
         images = ip_model.generate(
             pil_image=input_image,
             prompt=prompt,
@@ -49,39 +49,39 @@ def generate_images_with_seeds(
             guidance_scale=5.0,
             num_samples=1,
             num_inference_steps=30,
-            seed=seed,  # 使用当前种子
+            seed=seed,  # Use the current seed
             extra_text=extra_text,
             number_class_crossattention=number_class_crossattention
         )
         
-        # 保存结果
+        # Save the result
         images[0].save(output_path)
-        print(f"已保存 seed={seed} 的图像到: {output_path}")
+        print(f"Saved image for seed={seed} to: {output_path}")
 
 
 if __name__ == "__main__":
     input_image = "/home/sf/code/IMAGHarmony-2/sdxl-fine-tuning/data/images/five cats 3.png"
     device = "cuda:1"  
 
-    # 模型路径配置
+    # Model path configuration
     base_model_path = "/aigc_data_hdd/checkpoints/stable-diffusion-xl-base-1.0"
     image_encoder_path = "/aigc_data_hdd/checkpoints/stable-diffusion-xl-base-1.0/image_encoder"
     fine_tuned_ckpt = "/aigc_data_hdd/all_logs/IMAGHarmony_fivecats/checkpoint-200/ip_adapter.bin"
 
-    # 创建专门存储多种子结果的目录
+    # Create a dedicated directory to store multi-seed results
     save_root = os.path.join(
         '/home/sf/code/IMAGHarmony_new/results/',
         fine_tuned_ckpt.split('/')[3],  
         fine_tuned_ckpt.split('/')[4],
-        "seeds_1_to_100"  # 创建专门存放种子结果的子目录
+        "seeds_1_to_100"  # Create a subdirectory specifically for seed results
     )
     
-    # 确保目录存在
+    # Ensure the directory exists
     os.makedirs(save_root, exist_ok=True)
-    print(f"保存目录创建于: {save_root}")
+    print(f"Save directory created at: {save_root}")
     
-    # 加载SDXL基础模型
-    print("加载SDXL基础模型...")
+    # Load the SDXL base model
+    print("Loading SDXL base model...")
     pipe = StableDiffusionXLPipeline.from_pretrained(
         base_model_path,
         torch_dtype=torch.float16,
@@ -90,10 +90,11 @@ if __name__ == "__main__":
     pipe.enable_vae_tiling()
     pipe.to(device)
 
-    # 初始化ComposedAttention模块
+    # Initialize the ComposedAttention module
+    # Assuming ComposedAttention is defined in tutorial_train_sdxl_ori.py and takes these arguments
     number_class_crossattention = ComposedAttention(
-        image_hidden_size=1280,
-        text_context_dim=2048,
+        image_hidden_size=1280, # This argument might be named differently in your ComposedAttention class
+        text_context_dim=2048,  # This argument might be named differently in your ComposedAttention class
         inter_dim=ckpt_inter_dim,
         cross_heads=ckpt_cross_heads,
         reshape_blocks=ckpt_reshape_blocks,
@@ -101,8 +102,8 @@ if __name__ == "__main__":
         scale=1.0
     ).to(device).half() 
 
-    # 初始化IP-Adapter
-    print("初始化IP-Adapter...")
+    # Initialize IP-Adapter
+    print("Initializing IP-Adapter...")
     ip_model = IPAdapterXL(
         pipe, 
         image_encoder_path, 
@@ -114,7 +115,7 @@ if __name__ == "__main__":
         number_class_crossattention=number_class_crossattention  
     )
 
-    # 执行批量生成
+    # Perform batch generation
     generate_images_with_seeds(
         ip_model=ip_model,
         input_path=input_image,
