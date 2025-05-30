@@ -42,10 +42,10 @@ Our method is trained and evaluated on HarmonyBench, a newly curated benchmark w
 ![results_2](./assets/class_editing.png)
 
 ### Scene Editing
-![results_3](./assets/scene editing.png)
+![results_3](./assets/scene_editing.png)
 
 ### Style Editing
-![results_4](./assets/style editing.png)
+![results_4](./assets/style_editing.png)
 
 ### Dual-Category Editing
 ![results_5](./assets/page2.png)
