@@ -2,7 +2,7 @@
 
 
 
-<a href=''><img src='https://img.shields.io/badge/Project-Page-green'></a>
+<a href='https://revive234.github.io/IMAGHarmony.github.io/'><img src='https://img.shields.io/badge/Project-Page-green'></a>
 <a href=''><img src='https://img.shields.io/badge/Technique-Report-red'></a>
 <a href=''><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-blue'></a>
 <a href=''><img src='https://img.shields.io/badge/Dataset-HarmonyBench-orange'></a>
@@ -29,7 +29,8 @@ Our method is trained and evaluated on HarmonyBench, a newly curated benchmark w
 
 ![architecture](./assets/page1.png)
 
-## 🚀 Dataset Demo
+## 🚀 HarmonyBench Dataset Demo
+
 
 ![dataset_demo](./assets/bench.png)
 ## 🚀 Examples
