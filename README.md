@@ -38,7 +38,7 @@ Our method is trained and evaluated on HarmonyBench, a newly curated benchmark w
 ![results_1](./assets/sotacomp.png)
 
 
-### Double_edit
+### Simultaneous Dual-Category Editing Examples
 ![results_2](./assets/page2.png)
 
 
