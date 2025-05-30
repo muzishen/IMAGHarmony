@@ -34,7 +34,7 @@ Our method is trained and evaluated on HarmonyBench, a newly curated benchmark w
 ![dataset_demo](./assets/bench.png)
 ## 🚀 Examples
 
-![results_1](./assets/page3.png)
+![results_1](./assets/sotacomp.png)
 
 
 ### Double_edit
