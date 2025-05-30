@@ -38,8 +38,17 @@ Our method is trained and evaluated on HarmonyBench, a newly curated benchmark w
 ![results_1](./assets/sotacomp.png)
 
 
-### Simultaneous Dual-Category Editing Examples
-![results_2](./assets/page2.png)
+### Class Editing
+![results_2](./assets/class editing.png)
+
+### Scene Editing
+![results_3](./assets/scene editing.png)
+
+### Style Editing
+![results_4](./assets/Style editing.png)
+
+### Dual-Category Editing
+![results_5](./assets/page2.png)
 
 
 
