@@ -39,13 +39,13 @@ Our method is trained and evaluated on HarmonyBench, a newly curated benchmark w
 
 
 ### Class Editing
-![results_2](./assets/class editing.png)
+![results_2](./assets/class_editing.png)
 
 ### Scene Editing
 ![results_3](./assets/scene editing.png)
 
 ### Style Editing
-![results_4](./assets/Style editing.png)
+![results_4](./assets/style editing.png)
 
 ### Dual-Category Editing
 ![results_5](./assets/page2.png)
