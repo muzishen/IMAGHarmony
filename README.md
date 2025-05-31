@@ -96,7 +96,7 @@ We would like to thank the contributors to the [Instantstyle](https://github.com
 
 The IMAGHarmony code is available for both academic and commercial use. Users are permitted to generate images using this tool, provided they comply with local laws and exercise responsible use. The developers disclaim all liability for any misuse or unlawful activity by users.
 ## Citation
-If you find IMAGDressing-v1 useful for your research and applications, please cite using this BibTeX:
+If you find IMAGHarmony useful for your research and applications, please cite using this BibTeX:
 
 ```bibtex
 
