@@ -68,7 +68,7 @@ pip install -r requirements.txt
 ```
 ## 🌐 Download Models
 
-You can download our models from [百度云](). You can download the other component models from the original repository, as follows.
+You can download our models from [Huggingface](https://huggingface.co/kkkkggg/IMAGHarmony). You can download the other component models from the original repository, as follows.
 - [h94/IP-Adapter](https://huggingface.co/h94/IP-Adapter)
 - [stable-diffusion-XL](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0)
 
