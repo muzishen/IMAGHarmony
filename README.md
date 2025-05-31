@@ -6,7 +6,7 @@
 <a href=''><img src='https://img.shields.io/badge/Technique-Report-red'></a>
 <a href=''><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-blue'></a>
 <a href=''><img src='https://img.shields.io/badge/Dataset-HarmonyBench-orange'></a>
-[![GitHub stars](https://github.com/muzishen/IMAGHarmony?style=social)](https://github.com/muzishen/IMAGHarmony)
+[![GitHub stars](https://img.shields.io/github/stars/muzishen/IMAGGarment-1?style=social)](https://github.com/muzishen/IMAGHarmony)
 
 
 ## 🗓️ Release
