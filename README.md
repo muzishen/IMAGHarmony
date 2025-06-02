@@ -107,5 +107,13 @@ If you find IMAGHarmony useful for your research and applications, please cite u
 - [x] Inference Code
 - [ ] HarmonyBench Dataset
 - [ ] Model Weights
+
+## 👉 **My other projects:**  
+- [IMAGDressing](https://github.com/muzishen/IMAGDressing): Interactive modular apparel generation; virtual dressing.  
+- [IMAGGarment-1](https://github.com/muzishen/IMAGGarment-1): Fine-grained controllable garment generation.   
+- [IMAGPose](https://github.com/muzishen/IMAGPose): Pose-guided person generation with high fidelity.  
+- [RCDMs](https://github.com/muzishen/RCDMs): Rich-contextual conditional diffusion for story visualization.  
+- [PCDMs](https://github.com/tencent-ailab/PCDMs): Progressive conditional diffusion for pose-guided image synthesis.  
+
 ## 📨 Contact
 If you have any questions, please feel free to contact with us at shenfei140721@126.com and yutonggaokkk@njust.edu.cn.
