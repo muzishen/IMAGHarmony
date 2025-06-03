@@ -10,7 +10,7 @@
 
 
 ## 🗓️ Release
-- [2025/5/30] 🔥 We released the [technical report](https://arxiv.org/pdf/2504.13176) of IMAGHarmony.
+- [2025/5/30] 🔥 We released the [technical report](https://arxiv.org/pdf/2506.01949) of IMAGHarmony.
 - [2025/5/28] 🔥 We release the train and inference code of IMAGHarmony.
 - [2025/5/17] 🎉 We launch the [project page](https://revive234.github.io/IMAGHarmony.github.io/) of IMAGHarmony.
 
