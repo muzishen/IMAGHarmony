@@ -3,7 +3,7 @@
 
 
 <a href='https://revive234.github.io/IMAGHarmony.github.io/'><img src='https://img.shields.io/badge/Project-Page-green'></a>
-<a href=''><img src='https://img.shields.io/badge/Technique-Report-red'></a>
+<a href='https://arxiv.org/pdf/2506.01949'><img src='https://img.shields.io/badge/Technique-Report-red'></a>
 <a href='https://huggingface.co/kkkkggg/IMAGHarmony'><img src='https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Model-blue'></a>
 <a href=''><img src='https://img.shields.io/badge/Dataset-HarmonyBench-orange'></a>
 
@@ -99,8 +99,14 @@ The IMAGHarmony code is available for both academic and commercial use. Users ar
 If you find IMAGHarmony useful for your research and applications, please cite using this BibTeX:
 
 ```bibtex
-
+@article{shen2025imagharmony,
+  title={IMAGHarmony: Controllable Image Editing with Consistent Object Quantity and Layout },
+  author={Shen, Fei and Du, Xiaoyu and Gao, Yutong and Cao, Yushe and Lei, Xing and Tang, Jinhui},
+  booktitle={arXiv preprint arXiv:2506.01949},
+  year={2025}
+}
 ```
+
 ## 🕒 TODO List
 - [x] Paper
 - [x] Train Code
