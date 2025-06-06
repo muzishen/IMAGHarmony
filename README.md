@@ -100,9 +100,9 @@ If you find IMAGHarmony useful for your research and applications, please cite u
 
 ```bibtex
 @article{shen2025imagharmony,
-  title={IMAGHarmony: Controllable Image Editing with Consistent Object Quantity and Layout },
-  author={Shen, Fei and Du, Xiaoyu and Gao, Yutong and Cao, Yushe and Lei, Xing and Tang, Jinhui},
-  booktitle={arXiv preprint arXiv:2506.01949},
+  title={IMAGHarmony: Controllable Image Editing with Consistent Object Quantity and Layout},
+  author={Shen, Fei and Du, Xiaoyu and Gao, Yutong and Yu, Jian and Cao, Yushe and Lei, Xing and Tang, Jinhui},
+  journal={arXiv preprint arXiv:2506.01949},
   year={2025}
 }
 ```
