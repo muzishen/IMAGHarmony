@@ -94,7 +94,6 @@ python test.py
 Or you may like to test it on gradio
 ```
 python demo.py
-
 ```
 
 
