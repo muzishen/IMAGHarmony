@@ -2,7 +2,7 @@ import torch
 from diffusers import StableDiffusionXLPipeline
 from PIL import Image
 from ip_adapter import IPAdapterXL # Assuming IPAdapterXL is correctly defined in ip_adapter
-from tutorial_train_sdxl_ori import HarmonyAttention # Assuming HarmonyAttention is correctly defined
+from train import HarmonyAttention # Assuming HarmonyAttention is correctly defined
 import os
 
 
