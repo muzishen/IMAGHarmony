@@ -27,7 +27,7 @@ To this end, IMAGHarmony introduces a structure-aware framework for quantity-and
 We propose a harmony-aware attention (HA) mechanism to jointly model object structure and semantics, and a preference-guided noise selection (PNS) strategy to stabilize generation by selecting semantically aligned initial noise.
 Our method is trained and evaluated on HarmonyBench, a newly curated benchmark with diverse editing scenarios.
 
-![architecture](./assets/page1.png)
+![architecture](./assets/frameworkv7.pdf)
 
 ## 🚀 HarmonyBench Dataset Demo
 
