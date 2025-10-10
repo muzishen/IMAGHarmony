@@ -24,7 +24,7 @@
 ## 💡 Introduction
 IMAGHarmony tackles the challenge of controllable image editing in multi-object scenes, where existing models struggle with aligning object quantity and spatial layout.
 To this end, IMAGHarmony introduces a structure-aware framework for quantity-and-layout consistent image editing (QL-Edit), enabling precise control over object count, category, and arrangement.
-We propose a harmony-aware attention (HA) mechanism to jointly model object structure and semantics, and a preference-guided noise selection (PNS) strategy to stabilize generation by selecting semantically aligned initial noise.
+We propose a harmony aware (HA) mudule to jointly model object structure and semantics, and a preference-guided noise selection (PNS) strategy to stabilize generation by selecting semantically aligned initial noise.
 Our method is trained and evaluated on HarmonyBench, a newly curated benchmark with diverse editing scenarios.
 
 ![architecture](./assets/1.png)
