@@ -98,11 +98,14 @@ The IMAGHarmony code is available for both academic and commercial use. Users ar
 If you find IMAGHarmony useful for your research and applications, please cite using this BibTeX:
 
 ```bibtex
-@article{shen2025imagharmony,
-  title={IMAGHarmony: Controllable Image Editing with Consistent Object Quantity and Layout},
-  author={Shen, Fei and Du, Xiaoyu and Gao, Yutong and Yu, Jian and Cao, Yushe and Lei, Xing and Tang, Jinhui},
-  journal={arXiv preprint arXiv:2506.01949},
-  year={2025}
+@misc{shen2025imagharmonycontrollableimageediting,
+      title={IMAGHarmony: Controllable Image Editing with Consistent Object Quantity and Layout}, 
+      author={Fei Shen and Yutong Gao and Jian Yu and Xiaoyu Du and Jinhui Tang},
+      year={2025},
+      eprint={2506.01949},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2506.01949}, 
 }
 ```
 
