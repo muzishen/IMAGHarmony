@@ -32,16 +32,16 @@ Our method is trained and evaluated on HarmonyBench, a newly curated benchmark w
 ## 🚀 HarmonyBench Dataset Demo
 
 
-![dataset_demo](./assets/bench.png)
+![dataset_demo](./assets/harmonybench.jpg)
 ## 🚀 Examples
 
-![results_1](./assets/2.png)
+![results_1](./assets/sotacomp.jpg)
 
-![results_2](./assets/3.png)
+![results_2](./assets/multi.jpg)
 
 
 ### Dual-Category Editing
-![results_5](./assets/4.png)
+![results_5](./assets/3edit.jpg)
 
 
 
